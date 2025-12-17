@@ -12,18 +12,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build: # 或者是你定义的其他 job 名称
+  build:
     runs-on: ubuntu-latest
-    # --- 关键代码：添加以下权限配置 ---
+    
+    # 权限设置：确保可以推送镜像到 GitHub Packages
     permissions:
-      contents: read    # 允许读取仓库内容
-      packages: write   # 允许推送镜像到 GitHub Packages (GHCR)
-    # -------------------------------
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # ... 后续的登录和构建步骤 ...
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
