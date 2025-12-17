@@ -1,43 +1,26 @@
-name: Build and Push Docker Image
+// ... 前面代码保持不变 ...
 
-on:
-  push:
-    branches: [ "main" ]  # 当代码推送到 main 分支时触发
-  workflow_dispatch:      # 允许手动触发执行
-
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+// 优化后的文件清理逻辑：只清理临时日志，保留核心运行文件
+function cleanFiles() {
+  setTimeout(() => {
+    // 在容器环境下，不要删除 webPath 和 botPath 等正在运行的二进制文件
+    // 否则进程一旦检测到文件消失或重启，会导致容器启动失败
+    const filesToDelete = [bootLogPath, configPath]; 
     
-    # 【核心修复】这里必须明确授予 packages 的写入权限
-    permissions:
-      contents: read
-      packages: write
+    const cmd = process.platform === 'win32' 
+      ? `del /f /q ${filesToDelete.join(' ')} > nul 2>&1`
+      : `rm -f ${filesToDelete.join(' ')} >/dev/null 2>&1`;
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    exec(cmd, (error) => {
+      // console.clear(); // 容器日志建议保留，方便排查
+      console.log('Temporary config files cleaned. App is running robustly.');
+    });
+  }, 90000); 
+}
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+// 修改启动逻辑：确保在容器中端口保持监听
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is internal listening on port:${PORT}`);
+});
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=latest
-            type=sha
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ id.meta.outputs.tags }}
-          labels: ${{ id.meta.outputs.labels }}
+startserver().catch(err => console.error('Critical Start Error:', err));
