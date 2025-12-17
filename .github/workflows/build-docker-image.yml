@@ -7,15 +7,12 @@ on:
       - 'Dockerfile'
       - 'index.js'
       - 'package.json'
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    # 权限设置：确保可以推送镜像到 GitHub Packages
+    # 这里是解决 permission_denied 的核心：显式授权工作流写入权限
     permissions:
       contents: read
       packages: write
@@ -39,12 +36,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/mures:8080
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=HTTP Server
-            org.opencontainers.image.licenses=MIT
+          # 确保这里的路径与你的日志一致
+          tags: ghcr.io/${{ github.repository_owner }}/mures:8080
           cache-from: type=gha
           cache-to: type=gha,mode=max
