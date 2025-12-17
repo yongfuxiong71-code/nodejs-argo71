@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # 这里是解决 permission_denied 的核心：显式授权工作流写入权限
+    # 核心修复：必须显式声明 packages 写入权限以解决 permission_denied
     permissions:
       contents: read
       packages: write
@@ -36,7 +36,7 @@ jobs:
         with:
           context: .
           push: true
-          # 确保这里的路径与你的日志一致
-          tags: ghcr.io/${{ github.repository_owner }}/mures:8080
+          # 自动获取当前用户和仓库名
+          tags: ghcr.io/${{ github.repository }}:8080
           cache-from: type=gha
           cache-to: type=gha,mode=max
